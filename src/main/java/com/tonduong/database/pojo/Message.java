@@ -35,6 +35,17 @@ public class Message implements Serializable {
     @Column(name = "time")
     private Timestamp time;
 
+    @Column(name = "fileName")
+    private String fileName;
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+    
     public Message() {
     }
 

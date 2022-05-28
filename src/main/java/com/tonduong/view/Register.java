@@ -4,7 +4,12 @@
  */
 package com.tonduong.view;
 
+import com.tonduong.database.dao.DUser;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import javax.swing.JFrame;
+import com.tonduong.database.pojo.User;
+import java.util.UUID;
 
 /**
  *
@@ -18,6 +23,8 @@ public class Register extends javax.swing.JFrame {
     public Register() {
         initComponents();
         config();
+        handleAction();
+        lb_notice.setText("");
     }
 
     /**
@@ -38,8 +45,10 @@ public class Register extends javax.swing.JFrame {
         btn_register = new javax.swing.JButton();
         lb_password1 = new javax.swing.JLabel();
         repassword = new javax.swing.JPasswordField();
+        lb_notice = new javax.swing.JLabel();
+        lb_nickname = new javax.swing.JLabel();
+        nickname = new javax.swing.JPasswordField();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         title.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
         title.setText("ĐĂNG KÝ");
@@ -61,6 +70,11 @@ public class Register extends javax.swing.JFrame {
         lb_password1.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         lb_password1.setText("Nhập lại mật khẩu:");
 
+        lb_notice.setText("Nhập sai vui lòng nhập lại");
+
+        lb_nickname.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        lb_nickname.setText("Nhập tên người dùng: ");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -68,22 +82,29 @@ public class Register extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(58, 58, 58)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(lb_password1)
-                            .addComponent(lb_username)
-                            .addComponent(username, javax.swing.GroupLayout.DEFAULT_SIZE, 170, Short.MAX_VALUE)
-                            .addComponent(lb_password)
-                            .addComponent(password)
-                            .addComponent(repassword)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(btn_cancel)
-                                .addGap(18, 18, 18)
-                                .addComponent(btn_register))))
-                    .addGroup(layout.createSequentialGroup()
                         .addGap(92, 92, 92)
-                        .addComponent(title)))
+                        .addComponent(title))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(58, 58, 58)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(lb_password1)
+                                .addComponent(lb_username)
+                                .addComponent(username, javax.swing.GroupLayout.DEFAULT_SIZE, 170, Short.MAX_VALUE)
+                                .addComponent(lb_password)
+                                .addComponent(password)
+                                .addComponent(repassword)
+                                .addGroup(layout.createSequentialGroup()
+                                    .addComponent(btn_cancel)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addComponent(btn_register)))
+                            .addComponent(lb_nickname)
+                            .addComponent(nickname, javax.swing.GroupLayout.DEFAULT_SIZE, 170, Short.MAX_VALUE))))
                 .addContainerGap(50, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
+                .addGap(50, 50, 50)
+                .addComponent(lb_notice)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -94,19 +115,25 @@ public class Register extends javax.swing.JFrame {
                 .addComponent(lb_username)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(username, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lb_password)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(password, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lb_password1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(repassword, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(lb_nickname)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(nickname, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
+                .addComponent(lb_notice)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_cancel)
                     .addComponent(btn_register))
-                .addGap(57, 57, 57))
+                .addGap(24, 24, 24))
         );
 
         pack();
@@ -115,59 +142,54 @@ public class Register extends javax.swing.JFrame {
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Register.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Register.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Register.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Register.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Register().setVisible(true);
-            }
-        });
-    }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_cancel;
     private javax.swing.JButton btn_register;
+    private javax.swing.JLabel lb_nickname;
+    private javax.swing.JLabel lb_notice;
     private javax.swing.JLabel lb_password;
     private javax.swing.JLabel lb_password1;
     private javax.swing.JLabel lb_username;
+    private javax.swing.JPasswordField nickname;
     private javax.swing.JPasswordField password;
     private javax.swing.JPasswordField repassword;
     private javax.swing.JLabel title;
     private javax.swing.JTextField username;
     // End of variables declaration//GEN-END:variables
-     private void config(){
+    private JFrame _this = this;
+    
+    private void config() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+    
+    private void handleAction() {
+        btn_cancel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                _this.dispose();
+            }
+        });
+        btn_register.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (username.getText().equals("")
+                        || nickname.getText().equals("")
+                        || password.getText().equals("")
+                        || !repassword.getText().equals(password.getText())) {
+                    lb_notice.setText("Nhập sai trường vui lòng nhập lại!!!");
+                } else {
+                    User user = new User();
+                    user.setId(UUID.randomUUID().toString());
+                    user.setUsername(username.getText());
+                    user.setPassword(password.getText());
+                    user.setIp("localhost");
+                    user.setNickname(nickname.getText());
+                    DUser.add(user);
+                    _this.dispose();
+                }
+            }
+        });
     }
 }

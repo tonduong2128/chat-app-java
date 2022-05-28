@@ -43,7 +43,6 @@ public class ServerSocket {
             user.setIsOnline(true);
             DUser.update(user);
         } catch (Exception e) {
-
             serverSocket = new java.net.ServerSocket(0);
             int port = serverSocket.getLocalPort();
             String ip = "localhost";
@@ -134,10 +133,10 @@ public class ServerSocket {
 
                 System.err.println(idUser);
                 if (bws.get(idUser) == null) {
-                    break;
-                }
 
-                sendMessage(bws.get(idUser), data);
+                } else {
+                    sendMessage(bws.get(idUser), data);
+                }
 
             } catch (Exception e) {
 

@@ -115,19 +115,6 @@ public class ClientSocket {
             return null;
         }
     }
-
-    public void sendFile(BufferedWriter bw, File file) throws IOException {
-        long length = file.length();
-        byte[] bytes = new byte[Integer.MAX_VALUE];
-        InputStream in = new FileInputStream(file);
-        OutputStream out = socket.getOutputStream();
-
-        int count;
-        while ((count = in.read(bytes)) > 0) {
-            out.write(bytes, 0, count);
-        }
-    }
-
     public void close() {
         try {
             is.close();

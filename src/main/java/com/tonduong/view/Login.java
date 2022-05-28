@@ -4,6 +4,16 @@
  */
 package com.tonduong.view;
 
+import com.tonduong.controller.MainController;
+import com.tonduong.database.dao.DUser;
+import com.tonduong.database.pojo.User;
+import com.tonduong.model.struct.UserUI;
+import com.tonduong.socket.ServerSocket;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFrame;
 
 /**
@@ -18,6 +28,8 @@ public class Login extends javax.swing.JFrame {
     public Login() {
         initComponents();
         config();
+        handleAction();
+        lb_notice.setText("");
     }
 
     /**
@@ -36,6 +48,7 @@ public class Login extends javax.swing.JFrame {
         password = new javax.swing.JPasswordField();
         btn_register = new javax.swing.JButton();
         btn_login = new javax.swing.JButton();
+        lb_notice = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -56,6 +69,8 @@ public class Login extends javax.swing.JFrame {
         btn_login.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
         btn_login.setText("Đăng nhập");
 
+        lb_notice.setText("Tên mật khẩu hoặc tài khoản không đúng");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -74,10 +89,13 @@ public class Login extends javax.swing.JFrame {
                             .addComponent(password)))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(55, 55, 55)
-                        .addComponent(btn_register)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btn_login)))
-                .addContainerGap(52, Short.MAX_VALUE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lb_notice)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(btn_register)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(btn_login)))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -92,11 +110,13 @@ public class Login extends javax.swing.JFrame {
                 .addComponent(lb_password)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(password, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29)
+                .addGap(18, 18, 18)
+                .addComponent(lb_notice)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 14, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_register)
                     .addComponent(btn_login))
-                .addContainerGap(44, Short.MAX_VALUE))
+                .addGap(28, 28, 28))
         );
 
         pack();
@@ -108,16 +128,62 @@ public class Login extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_login;
     private javax.swing.JButton btn_register;
+    private javax.swing.JLabel lb_notice;
     private javax.swing.JLabel lb_password;
     private javax.swing.JLabel lb_username;
     private javax.swing.JPasswordField password;
     private javax.swing.JLabel title;
     private javax.swing.JTextField username;
     // End of variables declaration//GEN-END:variables
-    private void config(){
+   private JFrame _this = this;
+
+    private void config() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
         setResizable(false);
+        lb_notice.setText("");
+    }
+
+    private void handleAction() {
+        btn_register.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new Register();
+            }
+        });
+        btn_login.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (username.getText().equals("")
+                        || password.getText().equals("")) {
+                    lb_notice.setText("User name hoac mat khau khong dung");
+                } else {
+                    User user = DUser.find(username.getText(), password.getText());
+                    if (user == null) {
+                        lb_notice.setText("User name hoac mat khau khong dung");
+                    }
+                    if (Boolean.TRUE.equals(user.getIsOnline())) {
+                        lb_notice.setText("Tai khoan dang duoc su dung");
+                    } else {
+                        try {
+                            UserUI.setId(user.getId());
+                            UserUI.setNickname(user.getNickname());
+                            UserUI.setPort(user.getPort());
+                            UserUI.setIp(user.getIp());
+                            user.setIsOnline(true);
+                            DUser.update(user);
+                            
+                            ServerSocket.start();
+                            MainController.setHome(new Home());
+                            
+                            _this.dispose();
+                        } catch (IOException ex) {
+                            Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            }
+        });
     }
 }

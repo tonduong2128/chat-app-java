@@ -4,8 +4,14 @@
  */
 package com.tonduong.view;
 
+import com.tonduong.database.dao.DJoinroom;
+import com.tonduong.database.dao.DRoom;
+import com.tonduong.database.pojo.Joinroom;
+import com.tonduong.database.pojo.Room;
+import com.tonduong.model.struct.UserUI;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.UUID;
 import javax.swing.JFrame;
 
 /**
@@ -17,7 +23,10 @@ public class CreateGroup extends javax.swing.JFrame {
     /**
      * Creates new form Input
      */
-    public CreateGroup() {
+    private Home home;
+
+    public CreateGroup(Home h) {
+        home = h;
         initComponents();
         handleActions();
         config();
@@ -39,8 +48,6 @@ public class CreateGroup extends javax.swing.JFrame {
 
         lb_name = new javax.swing.JLabel();
         name = new javax.swing.JTextField();
-        lb_id = new javax.swing.JLabel();
-        id = new javax.swing.JTextField();
         btn_cancel = new javax.swing.JButton();
         btn_create = new javax.swing.JButton();
 
@@ -49,11 +56,6 @@ public class CreateGroup extends javax.swing.JFrame {
         lb_name.setText("Nhập tên nhóm");
 
         name.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
-
-        lb_id.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        lb_id.setText("ID của nhóm");
-
-        id.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
 
         btn_cancel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         btn_cancel.setText("Cancel");
@@ -66,35 +68,31 @@ public class CreateGroup extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(91, 91, 91)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGap(89, 89, 89)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(name, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lb_name)
-                    .addComponent(lb_id)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(layout.createSequentialGroup()
                             .addComponent(btn_cancel)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGap(18, 18, 18)
                             .addComponent(btn_create))
-                        .addComponent(id, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(86, Short.MAX_VALUE))
+                        .addGroup(layout.createSequentialGroup()
+                            .addGap(13, 13, 13)
+                            .addComponent(lb_name))))
+                .addContainerGap(88, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(44, 44, 44)
+                .addGap(95, 95, 95)
                 .addComponent(lb_name)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(name, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(lb_id)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(id, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(38, 38, 38)
+                .addComponent(name, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(33, 33, 33)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_cancel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(btn_create, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(39, 39, 39))
+                .addGap(77, 77, 77))
         );
 
         pack();
@@ -104,8 +102,6 @@ public class CreateGroup extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_cancel;
     private javax.swing.JButton btn_create;
-    private javax.swing.JTextField id;
-    private javax.swing.JLabel lb_id;
     private javax.swing.JLabel lb_name;
     private javax.swing.JTextField name;
     // End of variables declaration//GEN-END:variables
@@ -121,8 +117,20 @@ public class CreateGroup extends javax.swing.JFrame {
         btn_create.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.err.println("Name group: " + name.getText());
-                System.err.println("Id group:" + id.getText());
+                if (name.getText().trim().equals("")) {
+                    //do nothing
+                } else {
+                    Room room = new Room(UUID.randomUUID().toString(), UserUI.getIp(), name.getText(), UserUI.getPort());
+                    DRoom.add(room);
+                    
+                    Joinroom joinroom = new Joinroom();
+                    joinroom.setIdGroup(room.getId());
+                    joinroom.setIdUser(UserUI.getId());
+                    DJoinroom.add(joinroom);
+
+                    home.updateHistory(room);
+                    _this.dispose();
+                }
             }
         });
     }

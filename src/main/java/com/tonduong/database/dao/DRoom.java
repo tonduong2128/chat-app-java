@@ -45,7 +45,7 @@ public class DRoom {
             session.getTransaction().commit();
             session.close();
         } catch (Exception ex) {
-            return new Room();
+            
         }
         return group;
     }

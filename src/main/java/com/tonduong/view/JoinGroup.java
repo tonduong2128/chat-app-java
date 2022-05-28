@@ -4,6 +4,11 @@
  */
 package com.tonduong.view;
 
+import com.tonduong.database.dao.DJoinroom;
+import com.tonduong.database.dao.DRoom;
+import com.tonduong.database.pojo.Joinroom;
+import com.tonduong.database.pojo.Room;
+import com.tonduong.model.struct.UserUI;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JFrame;
@@ -17,11 +22,13 @@ public class JoinGroup extends javax.swing.JFrame {
     /**
      * Creates new form JoinGroup
      */
-    public JoinGroup() {
+    private Home home;
+    public JoinGroup(Home h) {
+        home = h;
         initComponents();
+        lb_notice.setText("");
         config();
         handleActions();
-
     }
 
     private void config() {
@@ -40,17 +47,15 @@ public class JoinGroup extends javax.swing.JFrame {
 
         id = new javax.swing.JTextField();
         lb_id = new javax.swing.JLabel();
-        name = new javax.swing.JTextField();
         btn_cancel = new javax.swing.JButton();
         btn_join = new javax.swing.JButton();
-        bt_name = new javax.swing.JLabel();
+        lb_notice = new javax.swing.JLabel();
+
 
         id.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
 
         lb_id.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
         lb_id.setText("Nhập ID của nhóm");
-
-        name.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
 
         btn_cancel.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         btn_cancel.setText("Cancel");
@@ -58,55 +63,54 @@ public class JoinGroup extends javax.swing.JFrame {
         btn_join.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         btn_join.setText("Tham gia");
 
-        bt_name.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        bt_name.setText("Tên nhóm:");
+        lb_notice.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        lb_notice.setText("Id của group không tồn tại");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(81, 81, 81)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(lb_id)
-                            .addComponent(bt_name)
-                            .addComponent(id, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addComponent(btn_cancel, javax.swing.GroupLayout.Alignment.LEADING))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                        .addComponent(btn_join)
-                        .addComponent(name, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(81, 81, 81)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(lb_id, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(btn_cancel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(btn_join))
+                            .addComponent(id, javax.swing.GroupLayout.Alignment.LEADING)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(93, 93, 93)
+                        .addComponent(lb_notice)))
                 .addContainerGap(63, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(57, 57, 57)
+                .addGap(92, 92, 92)
                 .addComponent(lb_id)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(18, 18, 18)
                 .addComponent(id, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(bt_name)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(name, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(38, 38, 38)
+                .addComponent(lb_notice)
+                .addGap(10, 10, 10)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_cancel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(btn_join, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(39, 39, 39))
+                .addGap(81, 81, 81))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel bt_name;
     private javax.swing.JButton btn_cancel;
     private javax.swing.JButton btn_join;
     private javax.swing.JTextField id;
     private javax.swing.JLabel lb_id;
-    private javax.swing.JTextField name;
+    private javax.swing.JLabel lb_notice;
     // End of variables declaration//GEN-END:variables
     private JFrame _this = this;
 
@@ -120,8 +124,27 @@ public class JoinGroup extends javax.swing.JFrame {
         btn_join.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.err.println("Name group: " + name.getText());
-                System.err.println("Id group:" + id.getText());
+                if (id.getText().equals("")) {
+                    //do nothing
+                } else {
+                    Room r = DRoom.find(id.getText());
+                    if (r != null) {
+
+                        Joinroom j = DJoinroom.findByIdUserAndIdRoom(UserUI.getId(), r.getId());
+                        if (j == null) {
+                            Joinroom joinroom = new Joinroom();
+                            joinroom.setIdGroup(r.getId());
+                            joinroom.setIdUser(UserUI.getId());
+                            DJoinroom.add(joinroom);
+                            home.updateHistory(r);
+                            _this.dispose();
+                        } else{
+                            lb_notice.setText("Bạn đã tham gia group này rồi");
+                        }
+                    } else {
+                        lb_notice.setText("Id group không tồn tại");
+                    }
+                }
             }
         });
     }

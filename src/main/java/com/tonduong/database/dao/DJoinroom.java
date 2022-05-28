@@ -72,4 +72,22 @@ public class DJoinroom {
         }
         return listGroup;
     }
+
+    public static Joinroom findByIdUserAndIdRoom(String idUser, String idRoom) {
+        Joinroom joinroom = null;
+        try (Session session = HibernateUntil.getSessionFactory().getCurrentSession()) {
+            session.beginTransaction();
+            String query = "Select J from Joinroom AS J "
+                    + "WHERE J.idGroup=:idGroup AND J.idUser=:idUser";
+            joinroom = (Joinroom) session.createQuery(query)
+                    .setParameter("idGroup", idRoom)
+                    .setParameter("idUser", idUser)
+                    .list().get(0);
+            session.getTransaction().commit();
+            session.close();
+        } catch (Exception e) {
+            return null;
+        }
+        return joinroom;
+    }
 }

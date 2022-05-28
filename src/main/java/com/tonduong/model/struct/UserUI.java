@@ -14,7 +14,25 @@ public class UserUI {
     }
     private static String id;
     private static String nickname;
+    private static int port;
+    private static String ip;
 
+    public static void setIp(String ip) {
+        UserUI.ip = ip;
+    }
+
+    public  static String getIp() {
+        return UserUI.ip;
+    }
+
+    public static int getPort() {
+        return port;
+    }
+
+    public static void setPort(int port) {
+        UserUI.port = port;
+    }
+    
     public static void setNickname(String nickname) {
         UserUI.nickname = nickname;
     }

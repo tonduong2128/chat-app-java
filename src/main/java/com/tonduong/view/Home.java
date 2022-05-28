@@ -17,6 +17,7 @@ import com.tonduong.database.pojo.User;
 import com.tonduong.model.struct.Action;
 import com.tonduong.model.struct.Boxchat;
 import com.tonduong.model.struct.TypeAction;
+import com.tonduong.model.struct.TypeMessage;
 import com.tonduong.model.struct.UserUI;
 import com.tonduong.socket.ClientSocket;
 import com.tonduong.socket.ServerSocket;
@@ -37,14 +38,22 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Stack;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -443,7 +452,7 @@ public class Home extends javax.swing.JFrame {
     private javax.swing.JLabel title;
     // End of variables declaration//GEN-END:variables
     private JDialog jFrameSearch;
-    private JFrame _this;
+    private Home _this;
     private List<Room> listRoomData;
     private Stack<Boxchat> listBoxActive;
     private List<JPanel> listRoomHistory;
@@ -502,15 +511,25 @@ public class Home extends javax.swing.JFrame {
         try {
             cs.start(room.getPort());
             ClientSocket pre = listSocketCL.put(room.getId(), cs);
+            System.out.println(room.getId());
             if (pre != null) {
                 pre.close();
             }
         } catch (IOException ex) {
-            User user = DUser.find(UserUI.getId());
-            room.setPort(user.getPort());
-            room.setIp(user.getIp());
-            DRoom.update(room);
-            System.err.println("My host is rom: " + room.getId());
+            try {
+                User user = DUser.find(UserUI.getId());
+                room.setPort(user.getPort());
+                room.setIp(user.getIp());
+                DRoom.update(room);
+                System.err.println("My host is rom: " + room.getId());
+                cs.start(room.getPort());
+                ClientSocket pre = listSocketCL.put(room.getId(), cs);
+                if (pre != null) {
+                    pre.close();
+                }
+            } catch (IOException ex1) {
+                Logger.getLogger(Home.class.getName()).log(Level.SEVERE, null, ex1);
+            }
         }
 
     }
@@ -586,21 +605,25 @@ public class Home extends javax.swing.JFrame {
         btn_createGroup.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new CreateGroup();
+                new CreateGroup(_this);
             }
         });
         //handle join group
         btn_joinGroup.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new JoinGroup();
+                new JoinGroup(_this);
             }
         });
 
+        //click close chatbox
+        final int BOX_CHAT_1 = 1;
+        final int BOX_CHAT_2 = 2;
+
         //btn handle choose file
         fileDialog = new JFileChooser();
-        btn_sendFile.addActionListener(new HandleClickSendFile());
-        btn_sendFile2.addActionListener(new HandleClickSendFile());
+        btn_sendFile.addActionListener(new HandleClickSendFile(BOX_CHAT_1));
+        btn_sendFile2.addActionListener(new HandleClickSendFile(BOX_CHAT_2));
 
         //click choose in list chat
         for (int i = 0; i < listRoomHistory.size(); i++) {
@@ -609,9 +632,6 @@ public class Home extends javax.swing.JFrame {
             );
         }
 
-        //click close chatbox
-        final int BOX_CHAT_1 = 1;
-        final int BOX_CHAT_2 = 2;
         btn_close.addActionListener(new HandleClickCloseChat(BOX_CHAT_1));
         btn_close2.addActionListener(new HandleClickCloseChat(BOX_CHAT_2));
 
@@ -622,17 +642,85 @@ public class Home extends javax.swing.JFrame {
 
     private class HandleClickSendFile implements ActionListener {
 
+        private int index;
+
+        public HandleClickSendFile(int index) {
+            this.index = index;
+        }
+
         @Override
         public void actionPerformed(ActionEvent e) {
+            Boxchat boxchat = listBoxActive.elementAt(listBoxActive.size() - index);
             int returnVal = fileDialog.showOpenDialog(_this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File file = fileDialog.getSelectedFile();
-                System.err.println("File 1");
+                try {
+                    File file = fileDialog.getSelectedFile();
+                    String text = new String(Files.readAllBytes(Paths.get(file.getPath())), StandardCharsets.UTF_8);
+                    handleSendFile(boxchat, file, text);
+                } catch (IOException ex) {
+                    Logger.getLogger(Home.class.getName()).log(Level.SEVERE, null, ex);
+                }
             } else {
                 System.out.println("Open command cancelled by user. File 1");
             }
         }
 
+    }
+
+    void handleSendFile(Boxchat boxchat, File file, String text) {
+        System.err.println("Boxchat: " + boxchat.getName() + " sendfile: " + file.getName());
+
+        Message message = new Message(
+                UUID.randomUUID().toString(),
+                UserUI.getId(),
+                boxchat.getId(),
+                text,
+                new Timestamp(System.currentTimeMillis()));
+
+        message.setFileName(file.getName());
+
+        Action<Message> action = new Action<>(TypeAction.CLIENT_TO_SERVER, message);
+
+        String data = listSocketCL.get(boxchat.getId()).sendMessage(action);
+        System.err.println("Try 1");
+        if (data == null) {
+            System.err.println("Try 2");
+//                listSocketCL.remove(boxchat.getId());
+
+            try {
+                System.err.println("Try 3");
+                ClientSocket cs = new ClientSocket();
+                Room r = DRoom.find(boxchat.getId());
+                cs.start(r.getPort());
+                data = cs.sendMessage(action);
+                if (data == null) {
+                    throw new IOException("Erorrrrrrrrrrr");
+                }
+                listSocketCL.put(boxchat.getId(), cs);
+            } catch (IOException exx) {
+                System.err.println("Try 4");
+                System.err.println(exx);
+                List<Joinroom> listJoinroom = DJoinroom.findByIdRoomWithUserOnline(boxchat.getId());
+                List<String> listUserSend = new ArrayList<>();
+
+                for (Joinroom joinroom : listJoinroom) {
+                    listUserSend.add(joinroom.getIdUser());
+                }
+                User user = DUser.find(UserUI.getId());
+                Room room = DRoom.find(boxchat.getId());
+                room.setPort(user.getPort());
+                DRoom.update(room);
+
+                Action<Message> ac = new Action<>(TypeAction.SERVER_TO_CLIENT, message);
+                List<Joinroom> listJoin = DJoinroom.find(UserUI.getId());
+                for (Joinroom joinGroup : listJoin) {
+                    Room r = DRoom.find(joinGroup.getIdGroup());
+                    listRoomData.add(r);
+                    createSocket(r);
+                }
+                ServerSocket.sendMessage(ac, listUserSend);
+            }
+        }
     }
 
     private class HandleClickSend implements ActionListener {
@@ -654,7 +742,9 @@ public class Home extends javax.swing.JFrame {
                 content = input_mes2.getText();
                 input_mes2.setText("");
             }
-
+            if (content.trim().equals("")) {
+                return;
+            }
             Message message = new Message(
                     UUID.randomUUID().toString(),
                     UserUI.getId(),
@@ -663,7 +753,8 @@ public class Home extends javax.swing.JFrame {
                     new Timestamp(System.currentTimeMillis()));
 
             Action<Message> action = new Action<>(TypeAction.CLIENT_TO_SERVER, message);
-            
+
+            System.out.println("ID: " + boxchat.getId());
             String data = listSocketCL.get(boxchat.getId()).sendMessage(action);
             System.err.println("Try 1");
             if (data == null) {
@@ -733,7 +824,6 @@ public class Home extends javax.swing.JFrame {
 
         @Override
         public void mouseClicked(MouseEvent e) {
-
             Boxchat boxNow = null;
             for (int i = 0; i < listBoxActive.size(); i++) {
                 if (listBoxActive.get(i).getId().equals(idGroup)) {
@@ -775,7 +865,7 @@ public class Home extends javax.swing.JFrame {
             cp.removeAll();
             List<Message> listMessage = bc.getListMessage();
             for (Message message : listMessage) {
-                addLineContent(cp, message);
+                addLineContent(bc, cp, message);
             }
         }
         cp.updateUI();
@@ -838,6 +928,7 @@ public class Home extends javax.swing.JFrame {
             thread.start();
         }
     }
+
     private class AddEventRemoveSearch implements MouseListener {
 
         @Override
@@ -867,9 +958,10 @@ public class Home extends javax.swing.JFrame {
         @Override
         public void insertUpdate(DocumentEvent e) {
             SetTimeOut.setTimeOut(() -> {
+                toggelSearch(false, null);
                 List<User> list = DUser.search(input_search.getText());
                 toggelSearch(true, list);
-                System.err.println("Data: " + input_search.getText());
+                input_search.requestFocus();
             }, 500);
         }
 
@@ -879,8 +971,10 @@ public class Home extends javax.swing.JFrame {
                 toggelSearch(false, new ArrayList<User>());
             } else {
                 SetTimeOut.setTimeOut(() -> {
+                    toggelSearch(false, null);
                     List<User> list = DUser.search(input_search.getText());
                     toggelSearch(true, list);
+                    input_search.requestFocus();
                 }, 500);
             }
         }
@@ -891,9 +985,13 @@ public class Home extends javax.swing.JFrame {
         }
     }
 
-    private void addLineContent(ColumnPanel cp, Message m) {
+    private void addLineContent(Boxchat bc, ColumnPanel cp, Message m) {
         User user = DUser.find(m.getIdUser());
-        cp.add(lineChat(user.getNickname(), m.getIdUser(), m.getContent(), m.getTime()));
+        if (m.getFileName() == null || m.getFileName().equals("null")) {
+            cp.add(lineChat(bc, user.getNickname(), m.getIdUser(), m.getContent(), m.getId(), m.getTime(), TypeMessage.STRING));
+        } else {
+            cp.add(lineChat(bc, user.getNickname(), m.getIdUser(), m.getFileName(), m.getId(), m.getTime(), TypeMessage.FILE));
+        }
         cp.updateUI();
     }
 
@@ -913,12 +1011,12 @@ public class Home extends javax.swing.JFrame {
         if (b1 != null && b1.getId().equals(message.getIdGroup())) {
             b1.getListMessage().add(message);
             System.err.println("Box 1");
-            addLineContent(contentBoxchat, message);
+            addLineContent(b1, contentBoxchat, message);
         }
         if (b2 != null && b2.getId().equals(message.getIdGroup())) {
             b2.getListMessage().add(message);
             System.err.println("Box 2");
-            addLineContent(contentBoxchat2, message);
+            addLineContent(b2, contentBoxchat2, message);
         }
     }
 
@@ -945,7 +1043,7 @@ public class Home extends javax.swing.JFrame {
         return _boxchat_content;
     }
 
-    private JPanel lineChat(String name, String id, String text, Timestamp time) {
+    private JPanel lineChat(Boxchat bc, String name, String id, String text, String idM, Timestamp time, TypeMessage typeM) {
         JPanel lineChat = new JPanel();
         lineChat.setBackground(Color.WHITE);
         lineChat.setLayout(new BorderLayout());
@@ -969,6 +1067,11 @@ public class Home extends javax.swing.JFrame {
         lb_time.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
         lineChat.add(lb_time, BorderLayout.PAGE_END);
         lb_time.setFont(new Font("Dialog", Font.PLAIN, 9));
+
+        if (typeM.equals(TypeMessage.FILE)) {
+            _con.addMouseListener(new ActionDownloadFile(bc, idM, text));
+            _con.setBackground(new Color(0, 0, 0, Float.parseFloat("0.1")));
+        }
 
         int MAX_LENGTH_BREAK = 18;
         int length = text.length() / MAX_LENGTH_BREAK;
@@ -997,7 +1100,74 @@ public class Home extends javax.swing.JFrame {
             lb_time.getParent().remove(lb_time);
             _con.setToolTipText(lbtime);
         }
+
         return lineChat;
+    }
+
+    private class ActionDownloadFile implements MouseListener {
+
+        private Boxchat boxchat;
+        private String fileName;
+        private String id;
+
+        public ActionDownloadFile(Boxchat bc, String i, String fn) {
+            boxchat = bc;
+            fileName = fn;
+            id = i;
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            System.out.println("Down load file");
+            JFileChooser fileDialog = new JFileChooser();
+            fileDialog.setCurrentDirectory(new java.io.File("."));
+            fileDialog.setDialogTitle("Chọn thư mục lưu trữ");
+            fileDialog.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+
+            //
+            // disable the "All files" option.
+            //
+            fileDialog.setAcceptAllFileFilterUsed(false);
+            //    
+            if (fileDialog.showOpenDialog(_this) == JFileChooser.APPROVE_OPTION) {
+                System.out.println("getCurrentDirectory(): "
+                        + fileDialog.getCurrentDirectory());
+                System.out.println("getSelectedFile() : "
+                        + fileDialog.getSelectedFile());
+                String path = fileDialog.getSelectedFile() + "\\" + fileName;
+                System.err.println("path: " + path);
+                File file = new File(path);
+                FileWriter fw;
+                try {
+                    fw = new FileWriter(file);
+                    Message m = DMessage.findById(id);
+                    fw.write(m.getContent());
+                    fw.flush();
+                    fw.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(Home.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else {
+                System.out.println("No Selection ");
+            }
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+        }
+
     }
 
     private JPanel lineHistory(Room room) {
@@ -1050,7 +1220,7 @@ public class Home extends javax.swing.JFrame {
         scroll.setPreferredSize(new Dimension(_history.getWidth(), _history.getHeight()));
         scroll.setMaximumSize(new Dimension(_history.getWidth(), _history.getHeight()));
 
-        JPanel _history_content = new JPanel();
+        _history_content = new JPanel();
         scroll.setViewportView(_history_content);
         _history_content.setBackground(Color.WHITE);
 
@@ -1065,6 +1235,25 @@ public class Home extends javax.swing.JFrame {
             listRoomHistory.add(lineHistory(listRoomData.get(i)));
             _history_content.add(listRoomHistory.get(i), cons);
         }
+    }
+    private JPanel _history_content;
+
+    public void updateHistory(Room room) {
+        listRoomData.add(room);
+        createSocket(room);
+
+        GridBagConstraints cons = new GridBagConstraints();
+        cons.fill = GridBagConstraints.HORIZONTAL;
+        cons.weightx = 1d;
+        cons.weighty = 10;
+        cons.gridy = listRoomData.size() - 1;
+
+        listRoomHistory.add(lineHistory(listRoomData.get(listRoomData.size() - 1)));
+        _history_content.add(listRoomHistory.get(listRoomData.size() - 1), cons);
+        listRoomHistory.get(listRoomData.size() - 1).addMouseListener(
+                new HandelClickChat(listRoomData.get(listRoomData.size() - 1).getId(), listRoomData.get(listRoomData.size() - 1).getName())
+        );
+        history.updateUI();
     }
 
     private void toggelSearch(Boolean isFocus, List<User> listUser) {

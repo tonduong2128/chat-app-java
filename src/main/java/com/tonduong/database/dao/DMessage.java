@@ -38,4 +38,19 @@ public class DMessage {
         }
         return listGroup;
     }
+
+    public static Message findById(String idMessage) {
+        Message mes = null;
+        try (Session session = HibernateUntil.getSessionFactory().getCurrentSession()) {
+            session.beginTransaction();
+
+            String query = "Select M from Message AS M WHERE M.id=:idMessage";
+            mes = (Message) session.createQuery(query)
+                    .setParameter("idMessage", idMessage)
+                    .list().get(0);
+            session.getTransaction().commit();
+            session.close();
+        }
+        return mes;
+    }
 }
